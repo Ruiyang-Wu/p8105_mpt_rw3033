@@ -102,7 +102,8 @@ clean_merged_df = clean_merged_df |>
     x2015_01_31:x2024_08_31,
     names_to = "date", 
     names_prefix = "x",
-    values_to = )
+    values_to = ) |>
+  mutate(date = ymd(date))
 ```
 After the data cleaning: There are total  `r clean_total_observations` observations exist in the merged data; `r clean_unique_zip_codes` unique ZIP codes; `r clean_unique_neighborhoods` unique neighborhoods.
 After the data cleaning, the total_observations matches unique_zip_codes.
@@ -231,8 +232,8 @@ library(ggplot2)
 
 # Make a plot showing NYC Rental Prices within ZIP codes for all available years
 rental_price_plot = clean_merged_df |>
-  ggplot(aes(x = year, y = as.factor(region_name), group = region_name, color = borough)) +  
-  geom_smooth(aes(x = year, y = value), method = "loess", se = FALSE, size = 0.5)  + 
+  ggplot(aes(x = date, y = value, group = region_name, color = borough)) +  
+  geom_line(size = 0.5)  + 
   facet_grid(. ~ borough) +
   labs(
     title = "NYC Rental Prices Over Time by ZIP Code",
@@ -246,7 +247,7 @@ rental_price_plot = clean_merged_df |>
 rental_price_plot
 ```
 Comment:
-Manhattan consistently has the highest rental prices. There are general upward trends across all boroughs from 2020 to 2024.
+Manhattan consistently has the highest rental prices. There are general upward trends across all boroughs from 2020 to 2024. Statwn Island is missing some years of value.
 
 
 ```{r}
@@ -255,7 +256,6 @@ average_housing_price = clean_housing_df |>
   group_by(region_name, month) |>
   summarise(average_price = mean(value, na.rm = TRUE))
   
-
 average_housing_price
 ```
 
@@ -275,7 +275,7 @@ housing_plot = ggplot(clean_housing_df, aes(x = state, y = value)) +
 print(housing_plot)
 ```
 Comment:
-States like California (CA) and New York (NY) display a wide range of house prices, with significantly higher upper extremes compared to other states. States such as Wyoming (WY) and West Virginia (WV) exhibit much narrower distributions and lower median house prices, indicating less variability and overall lower prices.
+States like CA and NY display a wide range of house prices, with significantly higher upper extremes compared to other states. States such as WY and WV exhibit much narrower distributions and lower median house prices, indicating less variability and overall lower prices.
 
 
 ```{r}
@@ -320,10 +320,8 @@ print(housing_rental_plot)
 
 ```
 Comment:
-The scatter plot demonstrates a positive correlation between average rental prices and average housing prices across ZIP codes, as highlighted by the upward-sloping trend line. This general upward trend suggests that areas with expensive rental markets also tend to have higher property values.
+The scatter plot demonstrates a positive correlation between average rental and housing prices across ZIP codes, as highlighted by the upward-sloping trend line. This upward trend suggests that areas with expensive rental markets also tend to have higher property values.
 
 Limitations:
-1. Missing Data: There are missing values for either rental or housing prices for some ZIP codes, which can skew the analysis.
-  
-2. Lack of Borough-Level Grouping: ZIP codes are not grouped by borough, making it harder to compare rental and housing prices across different boroughs and understand regional price differences.
-
+Missing Data: There are missing values for either rental or housing prices for some ZIP codes, which can skew the analysis.
+Lack of Borough-Level Grouping: ZIP codes are not grouped by borough, making it harder to compare rental and housing prices across different boroughs and understand regional price differences.
