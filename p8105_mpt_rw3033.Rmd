@@ -65,9 +65,7 @@ total_observations
 unique_zip_codes
 unique_neighborhoods
 ```
-There are total  `r total_observations` observations exist in the merged data. 
-There are `r unique_zip_codes` unique ZIP codes.
-There are `r unique_neighborhoods` unique neighborhoods.
+There are total  `r total_observations` observations exist in the merged data; `r unique_zip_codes` unique ZIP codes; `r unique_neighborhoods` unique neighborhoods.
 The total_observations should match unique_zip_codes, but in this case there are 2 more observations. Hence, there must be duplication in zip code in the merged data.
 
 ```{r}
@@ -78,7 +76,7 @@ duplicated_zip_code = merged_df |>
 
 duplicated_zip_code
 ```
-"10463" and "11201" are the two repetitive zip codes. These zip codes exist because the two regions are connected, causing them to share the same zip code. Therefore, I will delete the rows repetitive zip code.
+By filtering duplication, I found two repetitive zip codes. The duplicated zip codes exist because the two regions are connected, causing them to share the same zip code. Therefore, I deleted the rows repetitive zip code.
 
 ```{r}
 # Delete the rows repetitive zip code
@@ -106,10 +104,7 @@ clean_merged_df = clean_merged_df |>
     names_prefix = "x",
     values_to = )
 ```
-After the data cleaning:
-There are total  `r clean_total_observations` observations exist in the merged data. 
-There are `r clean_unique_zip_codes` unique ZIP codes.
-There are `r clean_unique_neighborhoods` unique neighborhoods.
+After the data cleaning: There are total  `r clean_total_observations` observations exist in the merged data; `r clean_unique_zip_codes` unique ZIP codes; `r clean_unique_neighborhoods` unique neighborhoods.
 After the data cleaning, the total_observations matches unique_zip_codes.
 
 ```{r}
@@ -131,6 +126,8 @@ clean_housing_df = housing_df |>
 I longer the table by date, and created a month variable.
 I convert the region_name to numeric variable.
 For data cleaning, I kept only zip code(region name), price (value), state, and month for further use.
+
+
 
 # Problem 2
 There are 116 months between January 2015 and August 2024, but in the NYC Rental dataset, many ZIP codes have fewer than 116 observations. This could be because the house may not have been rented every month.
@@ -155,10 +152,8 @@ rental_zip_observations
 missing_zip_rental
 missing_zip_zip
 ```
-The total number of ZIP codes in zip_df is `r zip_zip_observations`.
-The total number of ZIP codes in rental_df is `r rental_zip_observations`.
-The number of ZIP codes in zip_df but not rental_df is `r missing_zip_rental`
-The number of ZIP codes in zip_df but not rental_df `r missing_zip_zip`
+The total number of ZIP codes in zip_df is `r zip_zip_observations`; in rental_df is `r rental_zip_observations`; in zip_df but not rental_df is `r missing_zip_rental`.
+The number of ZIP codes in zip_df but not rental_df is `r missing_zip_zip`.
 The NYC rental dataset has fewer ZIP codes than the ZIP code dataset, which could be because not all regions in NYC have housing rentals.
 
 
@@ -177,10 +172,10 @@ average_rent_borough_year = clean_merged_df |>
 wider_average_rent_borough_year = average_rent_borough_year |>
   pivot_wider(names_from = year, values_from = average_rental_price)
 
-wider_average_rent_borough_year
+wider_average_rent_borough_year|>knitr::kable()
 ```
 Comment:
-The table shows a consistent increase in rental prices across most NYC boroughs from 2015 to 2024, with Manhattan and Brooklyn experiencing the highest rents. Manhattan sees a sharp rise, particularly between 2022 and 2024, reaching over $4000, while Brooklyn follows a steady upward trend. Queens and The Bronx also show notable increases, though they remain more affordable compared to Manhattan and Brooklyn. Staten Island has missing data for earlier years but sees gradual price growth from 2020 onward. Overall, the data indicates a competitive and rising rental market across the city.
+The table shows a consistent increase in rental prices across most NYC boroughs from 2015 to 2024. Staten Island has missing data for earlier years but sees gradual price growth from 2020 onward.
 
 
 ```{r}
@@ -207,7 +202,7 @@ price_comparison = covid_date_df |>
 ```
 
 Comment:
-Based on the data showing rental prices across various neighborhoods and boroughs in New York City for 2020 and 2021, there is a general trend of either slight decreases or moderate increases in rental prices across most regions. Some neighborhoods like West Central Queens and Flatbush (Brooklyn) experienced small decreases in rent from 2020 to 2021. On the other hand, some Manhattan neighborhoods, including Lower Manhattan and Upper East Side, show a noticeable reduction in rental prices, possibly due to the lingering effects of the COVID-19 pandemic, which caused rental market fluctuations. However, there are some areas, such as Gramercy Park and Murray Hill (Manhattan), where rental prices continued to rise despite these broader trends, signaling increased demand or recovery in those areas. Overall, the data indicates a mixed trend of recovery and stabilization across the city's rental market.
+Overall, the data indicates a mixed trend of either slight decreases or moderate increases in rental prices.
 
 ```{r}
 # Make a table that shows, for each Borough, the largest drop in price from 2020 to 2021; include the neighborhood with the largest drop.
@@ -223,11 +218,10 @@ largest_drop_by_borough = clean_price_comparison |>
   filter(price_drop == max(price_drop, na.rm = TRUE)) |>
   select(borough, neighborhood, value_2020, value_2021, price_drop)
 
-# View the resulting table
-largest_drop_by_borough
+largest_drop_by_borough|>knitr::kable()
 ```
 Comment:
-The table reveals significant differences in rental price drops across the boroughs from 2020 to 2021. Manhattan experienced the largest price drop, with a sharp decline of 912.60 in Lower Manhattan. This suggests that the rental market in Manhattan was most affected, likely due to the impacts of the COVID-19 pandemic, which caused many to leave densely populated urban areas. Brooklyn, specifically in Greenpoint, saw the second-largest drop of 437.94, indicating a substantial impact on this neighborhood as well. Queens had a more moderate decline, with West Central Queens experiencing a decrease of 216.97. The Bronx, on the other hand, had the smallest decline, with Southeast Bronx seeing only a 16.46 drop, suggesting that the rental market in this borough remained relatively stable during this period.
+The table reveals significant differences in rental price drops across the boroughs from 2020 to 2021. Manhattan experienced the largest price drop. The Bronx, on the other hand, had the smallest decline.
 
 
 
@@ -235,20 +229,24 @@ The table reveals significant differences in rental price drops across the borou
 ```{r}
 library(ggplot2)
 
-# Create the plot without lines, and adjust the y-axis limits
-rental_price_plot = ggplot(clean_merged_df, aes(x = year, y = value, color = borough)) +
-  geom_point(alpha = 0.5, size = 1) +
+# Make a plot showing NYC Rental Prices within ZIP codes for all available years
+rental_price_plot = clean_merged_df |>
+  ggplot(aes(x = year, y = as.factor(region_name), group = region_name, color = borough)) +  
+  geom_smooth(aes(x = year, y = value), method = "loess", se = FALSE, size = 0.5)  + 
+  facet_grid(. ~ borough) +
+  labs(
+    title = "NYC Rental Prices Over Time by ZIP Code",
+    x = "Year",
+    y = "ZIP Code",
+    color = "Borough"
+  ) +
   theme_minimal() + 
-  labs(title = "NYC Rental Prices by ZIP Code Across Years",
-       x = "Year",
-       y = "Rental Price",
-       color = "Borough") +  # Label for color (boroughs)
-  theme(legend.position = "right")
+  theme(axis.text.x = element_text(angle = 90))
 
-print(rental_price_plot)
+rental_price_plot
 ```
 Comment:
-This plot shows the rental prices in New York City across different ZIP codes from 2015 to 2024, differentiated by borough. We can observe that Manhattan consistently has the highest rental prices, with many data points above 5,000 across the years, reflecting its status as the most expensive borough. Brooklyn and Queens generally have mid-range prices, with Brooklyn showing more variability. The Bronx and Staten Island consistently have the lowest rental prices, with most data points concentrated below 3,000. The general upward trend across most boroughs from 2020 to 2024 may reflect recovery or inflationary pressure following the pandemic.
+Manhattan consistently has the highest rental prices. There are general upward trends across all boroughs from 2020 to 2024.
 
 
 ```{r}
@@ -256,6 +254,7 @@ This plot shows the rental prices in New York City across different ZIP codes fr
 average_housing_price = clean_housing_df |>
   group_by(region_name, month) |>
   summarise(average_price = mean(value, na.rm = TRUE))
+  
 
 average_housing_price
 ```
@@ -276,7 +275,7 @@ housing_plot = ggplot(clean_housing_df, aes(x = state, y = value)) +
 print(housing_plot)
 ```
 Comment:
-The violin plot shows the distribution of ZIP-code-level house prices across different states, allowing us to easily compare the spread and range of housing prices within each state. States like California (CA) and New York (NY) display a wide range of house prices, with significantly higher upper extremes compared to other states, suggesting that these areas have some of the most expensive properties. States such as Wyoming (WY) and West Virginia (WV) exhibit much narrower distributions and lower median house prices, indicating less variability and overall lower prices. The plot effectively highlights the disparities between states, especially the stark contrast in housing costs between high-cost states like California and low-cost states like West Virginia.
+States like California (CA) and New York (NY) display a wide range of house prices, with significantly higher upper extremes compared to other states. States such as Wyoming (WY) and West Virginia (WV) exhibit much narrower distributions and lower median house prices, indicating less variability and overall lower prices.
 
 
 ```{r}
@@ -321,11 +320,10 @@ print(housing_rental_plot)
 
 ```
 Comment:
-The scatter plot demonstrates a positive correlation between average rental prices and average housing prices across ZIP codes, as highlighted by the upward-sloping trend line. Higher rental prices tend to correspond with higher housing prices, though there is some variability around the trend line, indicating that other factors may also influence housing prices. Some ZIP codes exhibit much higher housing prices compared to others with similar rental prices, which could be due to regional differences, amenities, or local demand for housing. This general upward trend suggests that areas with expensive rental markets also tend to have higher property values.
+The scatter plot demonstrates a positive correlation between average rental prices and average housing prices across ZIP codes, as highlighted by the upward-sloping trend line. This general upward trend suggests that areas with expensive rental markets also tend to have higher property values.
 
-Limitations of this dataset for understanding rental and housing prices in NYC:
-1. Missing Data: There are missing values for either rental or housing prices for some ZIP codes, which can skew the analysis. Without complete data for all ZIP codes, it is difficult to draw fully accurate conclusions about price trends across the city.
+Limitations:
+1. Missing Data: There are missing values for either rental or housing prices for some ZIP codes, which can skew the analysis.
   
-2. Lack of Borough-Level Grouping: The dataset does not group the ZIP codes by borough, which means that differences in rental and housing prices across different boroughs (e.g., Manhattan, Brooklyn, Queens) cannot be easily analyzed. Without this grouping, regional differences that are essential to understanding NYC's diverse housing market are less apparent.
-
+2. Lack of Borough-Level Grouping: ZIP codes are not grouped by borough, making it harder to compare rental and housing prices across different boroughs and understand regional price differences.
 
